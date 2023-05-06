@@ -92,6 +92,24 @@ void tests(void) {
 	TEST_PARSER("{\"something\": \"\\\"reason\\\"\"}");
 	TEST_PARSER("{\"pi\": 3.14}");
 	TEST_PARSER("{\"key\": [1, {\"a\": \"b\", \"c\": 3.14}, 2], }");
+
+	// TODO: Test this and move constructor with actual data
+	TEST("", [](auto s) {
+		json j1;
+		{
+			json j2(j1);
+		}
+		assert(j1.is_null());
+	});
+
+	TEST("", [](auto s) {
+		json j1;
+		{
+			json j2;
+			j1 = move(j2);
+		}
+		assert(j1.is_null());
+	});
 }
 
 int main(int argc, char** argv) {

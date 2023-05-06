@@ -138,3 +138,125 @@ void parse(std::istream& stream) {
 		parse_primitive(stream);
 	}
 }
+
+struct json::impl {
+	enum json_type {
+		JSON_NULL,
+		JSON_NUMBER,
+		JSON_BOOL,
+		JSON_STR,
+		JSON_LIST,
+		JSON_DICT
+	} type;
+
+	double n;
+	bool b;
+	std::string s;
+
+	struct list {
+		std::pair<std::string, json> value;
+		list *next;
+	};
+	list* head;
+	list* tail;
+
+	impl() : type(JSON_NULL), head(nullptr), tail(nullptr) {}
+
+	impl(const impl& rhs) {
+		*this = rhs;
+	}
+
+	~impl() {
+		clear();
+	}
+
+	void push_back(std::pair<std::string, json> value) {
+		list* node = new list;
+		node->value = value;
+		node->next = nullptr;
+
+		if (tail == nullptr) {
+			head = tail = node;
+		} else {
+			tail->next = node;
+			tail = node;
+		}
+	}
+
+	impl& operator=(const impl& rhs) {
+		clear();
+		type = rhs.type;
+
+		n = rhs.n;
+		b = rhs.b;
+		s = rhs.s;
+
+		list* ptr = rhs.head;
+		while (ptr != nullptr) {
+			push_back(ptr->value);
+		}
+		return *this;
+	}
+
+	void clear() {
+		type = JSON_NULL;
+		s.clear();
+		while (head != nullptr) {
+			list* previous = head;
+			head = head->next;
+			delete previous;
+		}
+		tail = nullptr;
+	}
+};
+
+json::json() {
+	pimpl = new impl;
+}
+
+json::json(const json& rhs) : json() {
+	*this = rhs;
+}
+
+json::json(json&& rhs) {
+	*this = std::move(rhs);
+}
+
+json::~json() {
+	delete pimpl;
+}
+
+json& json::operator=(const json& rhs) {
+	*pimpl = *rhs.pimpl;
+	return *this;
+}
+
+json& json::operator=(json&& rhs) {
+	pimpl = rhs.pimpl;
+	rhs.pimpl = nullptr;
+	return *this;
+}
+
+bool json::is_list() const {
+	return pimpl->type == impl::json_type::JSON_LIST;
+}
+
+bool json::is_dictionary() const {
+	return pimpl->type == impl::json_type::JSON_DICT;
+}
+
+bool json::is_string() const {
+	return pimpl->type == impl::json_type::JSON_STR;
+}
+
+bool json::is_number() const {
+	return pimpl->type == impl::json_type::JSON_NUMBER;
+}
+
+bool json::is_bool() const {
+	return pimpl->type == impl::json_type::JSON_BOOL;
+}
+
+bool json::is_null() const {
+	return pimpl->type == impl::json_type::JSON_NULL;
+}

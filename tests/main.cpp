@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <cassert>
+#include <fstream>
 using namespace std;
 
 void parse(istream&);
@@ -29,7 +30,7 @@ void parse(istream&);
 	} while (false);
 
 void tests(void) {
-	TEST_PARSER_THROW("", "Unexpected EOF");
+	TEST_PARSER_THROW("", "Expected JSON, got EOF");
 	TEST_PARSER_THROW("A", "Expected primitive, got byte 65");
 	TEST_PARSER_THROW("nul", "Expected 'null', got 'nul'");
 	TEST_PARSER_THROW("nulu", "Expected 'null', got 'nulu'");
@@ -59,19 +60,52 @@ void tests(void) {
 	TEST_PARSER("\"hello\nworld\"");
 	TEST_PARSER("\"some \\\"other\\\" string\"");
 
-	TEST_PARSER_THROW("[", "Unexpected EOF");
-	TEST_PARSER_THROW("[[", "Unexpected EOF");
+	TEST_PARSER_THROW("[", "Expected JSON, got EOF");
+	TEST_PARSER_THROW("[[", "Expected JSON, got EOF");
 	TEST_PARSER_THROW("[\"something, 3.14]", "Expected '\"', got EOF");
 	TEST_PARSER_THROW("[tru]", "Expected 'true', got 'tru]'");
-	TEST_PARSER_THROW("[null, \"\", [1, 2]", "Expected ']', got ''");
+	TEST_PARSER_THROW("[truee]", "Expected ']', got 'e'");
+	TEST_PARSER_THROW("[null, \"\", [1, 2]", "Expected ']', got EOF");
 	TEST_PARSER_THROW("[,]", "Expected primitive, got byte 44");
 	TEST_PARSER("[]");
+	TEST_PARSER("[[[], [[[[], null], [[\"something\"]], [1]]], [false]], []]");
 	TEST_PARSER("[3.14]");
 	TEST_PARSER("[3.14,]");
 	TEST_PARSER("[\"something\", 3.14]");
 	TEST_PARSER("[true, false, \"\", [1, 2]]");
+
+	TEST_PARSER_THROW("{", "Expected '\"', got EOF");
+	TEST_PARSER_THROW("{{", "Expected '\"', got '{'");
+	TEST_PARSER_THROW("{{}}", "Expected '\"', got '{'");
+	TEST_PARSER_THROW("{,}", "Expected '\"', got ','");
+	TEST_PARSER_THROW("{\"something: 3.14}", "Expected '\"', got EOF");
+	TEST_PARSER_THROW("{\"key\": [1,}", "Expected primitive, got byte 125");
+	TEST_PARSER_THROW("{\" \\\" \": [{\"a\": 1]}", "Expected '}', got ']'");
+	TEST_PARSER("{}");
+	TEST_PARSER("{\"something\": \"\\\"reason\\\"\"}");
+	TEST_PARSER("{\"pi\": 3.14}");
+	TEST_PARSER("{\"key\": [1, {\"a\": \"b\", \"c\": 3.14}, 2], }");
 }
 
-int main(void) {
+int main(int argc, char** argv) {
 	tests();
+
+	for (int i = 1; i < argc; i++) {
+		ifstream stream(argv[i]);
+
+		try {
+			parse(stream);
+			cout << "TEST:" << argv[1] << ": Passed" << endl;
+		} catch (json_exception e) {
+			cout << "TEST:" << argv[1] << ": Exception (" << e.msg << ") before '";
+			for (size_t j = 0; j < 20 && stream; j++) {
+				char symbol = stream.get();
+				cout << symbol;
+			}
+			if (stream) {
+				cout << "...";
+			}
+			cout << "'" << endl;
+		}
+	}
 }

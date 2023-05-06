@@ -79,6 +79,7 @@ void tests(void) {
 	TEST_PARSER_THROW("{{}}", "Expected '\"', got '{'");
 	TEST_PARSER_THROW("{,}", "Expected '\"', got ','");
 	TEST_PARSER_THROW("{\"something: 3.14}", "Expected '\"', got EOF");
+	TEST_PARSER_THROW("{\"key\", \"value\"}", "Expected ':', got byte 44");
 	TEST_PARSER_THROW("{\"key\": [1,}", "Expected primitive, got byte 125");
 	TEST_PARSER_THROW("{\" \\\" \": [{\"a\": 1]}", "Expected '}', got ']'");
 	TEST_PARSER("{}");
@@ -95,9 +96,9 @@ int main(int argc, char** argv) {
 
 		try {
 			parse(stream);
-			cout << "TEST:" << argv[1] << ": Passed" << endl;
+			cout << "TEST:" << argv[i] << ": Passed" << endl;
 		} catch (json_exception e) {
-			cout << "TEST:" << argv[1] << ": Exception (" << e.msg << ") before '";
+			cout << "TEST:" << argv[i] << ": Exception (" << e.msg << ") before '";
 			for (size_t j = 0; j < 20 && stream; j++) {
 				char symbol = stream.get();
 				cout << symbol;

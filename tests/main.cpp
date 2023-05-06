@@ -36,14 +36,19 @@ void tests(void) {
 	TEST_PARSER_THROW("nulu", "Expected 'null', got 'nulu'");
 	TEST_PARSER("null");
 
+	TEST_PARSER_THROW(".13", "Expected primitive, got byte 46");
 	TEST_PARSER("3.14");
+	TEST_PARSER("-1.61");
+	TEST_PARSER("0.0");
 
 	TEST_PARSER_THROW("f", "Expected 'false', got 'f'");
 	TEST_PARSER_THROW("fals", "Expected 'false', got 'fals'");
 	TEST_PARSER_THROW("flase", "Expected 'false', got 'flase'");
 	TEST_PARSER("false");
 
-	TEST_PARSER("falseeeee");	// TODO: Should this work?
+	// TODO: Which one?
+	//TEST_PARSER_THROW("falseeeee", "Expected EOF, got byte 101");
+	TEST_PARSER("falseeeee");
 
 	TEST_PARSER_THROW("t", "Expected 'true', got 't'");
 	TEST_PARSER_THROW("tre", "Expected 'true', got 'tre'");
@@ -54,9 +59,10 @@ void tests(void) {
 	TEST_PARSER_THROW("\"something", "Expected '\"', got EOF");
 	TEST_PARSER_THROW("\"\\\"", "Expected '\"', got EOF");
 	TEST_PARSER_THROW("\"something\\\"", "Expected '\"', got EOF");
+	TEST_PARSER_THROW("\"something\\\\\"", "Expected '\"', got EOF");	// NOTE: Standard wouldn't crash
 	TEST_PARSER("\"\"");
 	TEST_PARSER("\"\\\"\"");
-	TEST_PARSER("\"some \\\\\" thing\"");
+	TEST_PARSER("\"some \\\\\" thing\"");	// NOTE: Standard would crash
 	TEST_PARSER("\"hello\nworld\"");
 	TEST_PARSER("\"some \\\"other\\\" string\"");
 
@@ -71,7 +77,7 @@ void tests(void) {
 	TEST_PARSER("[[[], [[[[], null], [[\"something\"]], [1]]], [false]], []]");
 	TEST_PARSER("[3.14]");
 	TEST_PARSER("[3.14,]");
-	TEST_PARSER("[\"something\", 3.14]");
+	TEST_PARSER("[\"something\", 3.14, -2, {\"\": -1}]");
 	TEST_PARSER("[true, false, \"\", [1, 2]]");
 
 	TEST_PARSER_THROW("{", "Expected '\"', got EOF");
@@ -107,6 +113,7 @@ int main(int argc, char** argv) {
 				cout << "...";
 			}
 			cout << "'" << endl;
+			break;
 		}
 	}
 }

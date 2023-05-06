@@ -61,7 +61,7 @@ static void parse_primitive(std::istream& stream) {
 
 	if (symbol == 'n') {
 		parse_expect(stream, "null");
-	} else if (symbol >= '0' && symbol <= '9') {
+	} else if ((symbol >= '0' && symbol <= '9') || symbol == '-') {
 		double number;
 		stream >> number;
 	} else if (symbol == 'f') {

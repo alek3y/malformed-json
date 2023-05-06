@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++14 -pedantic -Wall -Wextra -Wshadow -Wfatal-errors
+CXXFLAGS = -g -std=c++14 -pedantic -Wall -Wextra -Wshadow -Wfatal-errors
 CXXFLAGS += -I include
 
 SRC = src/json.cpp tests/main.cpp

@@ -2,47 +2,65 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <functional>
+#include <cassert>
 using namespace std;
 
 void parse(istream&);
 
-void test(string contents, bool throws, bool (*lambda)(std::istream&), unsigned line) {
-	string msg;
-	bool success;
-	try {
-		stringstream stream(contents);
-		success = lambda(stream) && !throws;
-	} catch (json_exception e) {
-		msg = e.msg;
-		success = throws;
-	}
+#define TEST(contents, lambda) \
+	do { \
+		stringstream stream(string((contents))); \
+		((void (*)(stringstream&)) (lambda))(stream); \
+		cout << "TEST:" << __LINE__ << ": Success" << endl; \
+	} while (false);
 
-	cout << "TEST:" << line << ": ";
-	if (success) {
-		cout << "Success";
-	} else {
-		cout << "Fail";
-	}
+#define TEST_PARSER(contents) \
+	do { \
+		TEST((contents), [](auto s) {parse(s);}); \
+	} while (false);
 
-	if (msg.length() > 0) {
-		cout << " => " << msg;
-	}
-	cout << endl;
+#define TEST_PARSER_THROW(contents, expected) \
+	do { \
+		TEST((contents), [](auto s) { \
+			string msg; \
+			try { parse(s); } catch (json_exception e) { msg = e.msg; } \
+			if (msg != (expected)) { \
+				cout << "e.msg: '" << msg << "'" << endl; \
+			} \
+			assert(msg == (expected)); \
+		}); \
+	} while (false);
+
+void tests(void) {
+	TEST_PARSER_THROW("", "Unexpected empty file");
+	TEST_PARSER_THROW("A", "Expected primitive, but found byte 65");
+	TEST_PARSER_THROW("nul", "Expected 'null', but got 'nul'");
+	TEST_PARSER_THROW("nulu", "Expected 'null', but got 'nulu'");
+	TEST_PARSER("null");
+
+	TEST_PARSER("3.14");
+
+	TEST_PARSER_THROW("f", "Expected 'false', but got 'f'");
+	TEST_PARSER_THROW("fals", "Expected 'false', but got 'fals'");
+	TEST_PARSER_THROW("flase", "Expected 'false', but got 'flase'");
+	TEST_PARSER("false");
+
+	TEST_PARSER_THROW("t", "Expected 'true', but got 't'");
+	TEST_PARSER_THROW("tre", "Expected 'true', but got 'tre'");
+	TEST_PARSER_THROW("treu", "Expected 'true', but got 'treu'");
+	TEST_PARSER("true");
+
+	TEST_PARSER_THROW("\"", "Expected end of string, got EOF");
+	TEST_PARSER_THROW("\"something", "Expected end of string, got EOF");
+	TEST_PARSER_THROW("\"\\\"", "Expected end of string, got EOF");
+	TEST_PARSER_THROW("\"something\\\"", "Expected end of string, got EOF");
+	TEST_PARSER("\"\"");
+	TEST_PARSER("\"\\\"\"");
+	TEST_PARSER("\"some \\\\\" thing\"");
+	TEST_PARSER("\"hello\nworld\"");
+	TEST_PARSER("\"some \\\"other\\\" string\"");
 }
-
-void test_parse(string contents, bool throws, unsigned line) {
-	test(contents, throws, [](auto s) -> bool {
-		parse(s);
-		return true;
-	}, line);
-}
-
-#define TEST(contents, throws, lambda) test(contents, throws, lambda, __LINE__)
-#define TEST_PARSE(contents, throws) test_parse(contents, throws, __LINE__)
 
 int main(void) {
-	TEST_PARSE("", true);
-	TEST_PARSE("nul", true);
-	TEST_PARSE("null", false);
+	tests();
 }

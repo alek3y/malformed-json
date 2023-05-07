@@ -6,8 +6,6 @@
 #include <fstream>
 using namespace std;
 
-void parse(istream&);
-
 #define TEST(contents, ...) \
 	do { \
 		stringstream stream(string((contents))); \
@@ -15,13 +13,16 @@ void parse(istream&);
 		cout << "TEST:" << __LINE__ << ": Passed" << endl; \
 	} while (false);
 
-#define TEST_PARSER(contents) TEST((contents), [](auto s) {parse(s);})
+#define TEST_PARSER(contents) TEST((contents), [](auto s) {json j; s >> j;})
 
 #define TEST_PARSER_THROW(contents, expected) \
 	do { \
 		TEST((contents), [](auto s) { \
 			string msg; \
-			try { parse(s); } catch (json_exception e) { msg = e.msg; } \
+			try { \
+				json j; \
+				s >> j; \
+			} catch (json_exception e) { msg = e.msg; } \
 			if (msg != (expected)) { \
 				cout << "TEST:" << __LINE__ << ": e.msg: " << msg << endl; \
 			} \
@@ -212,20 +213,26 @@ void tests(void) {
 int main(int argc, char** argv) {
 	tests();
 
+	// TODO:
+	// Are huge datasets, like:
+	// - https://github.com/jdorfman/awesome-json-datasets#historical-events (English; only with sanitizers)
+	// - https://huggingface.co/datasets/enryu43/twitter100m_users
+	// - https://huggingface.co/datasets/enryu43/twitter100m_tweets
+	// - and others from https://www.reddit.com/r/datasets/ and https://www.reddit.com/r/opendata/
+	// supposed to crash the parser of stack overflow (see valgrind)?
+	// How big should the JSON file be before the parser crashes?
 	for (int i = 1; i < argc; i++) {
 		ifstream stream(argv[i]);
 
 		try {
-			parse(stream);
+			json j;
+			stream >> j;
 			cout << "TEST:" << argv[i] << ": Passed" << endl;
 		} catch (json_exception e) {
-			cout << "TEST:" << argv[i] << ": Exception (" << e.msg << ") before '";
-			for (size_t j = 0; j < 20 && stream; j++) {
+			cout << "TEST:" << argv[i] << ": " << e.msg << " before '";
+			for (size_t j = 0; j < 50 && stream; j++) {
 				char symbol = stream.get();
 				cout << symbol;
-			}
-			if (stream) {
-				cout << "...";
 			}
 			cout << "'" << endl;
 			break;

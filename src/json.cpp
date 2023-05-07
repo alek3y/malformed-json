@@ -292,10 +292,10 @@ void json::insert(const std::pair<std::string, json>& rhs) {
 
 static inline void parse_expect(std::istream& stream, std::string expected) {
 	std::string content;
-	content.resize(expected.length());
+	content.resize(expected.size());
 
 	size_t bytes_read = 0;
-	while (stream && bytes_read < expected.length()) {
+	while (stream && bytes_read < expected.size()) {
 		content[bytes_read] = stream.get();
 
 		if (stream) {
@@ -306,18 +306,31 @@ static inline void parse_expect(std::istream& stream, std::string expected) {
 
 	if (content != expected) {
 		std::string msg = "Expected '" + expected + "', got ";
-		if (content.length() == 0 && expected.length() > 0) {
+		if (content.size() == 0 && expected.size() > 0) {
 			msg += "EOF";
 		} else {
-			assert(content.length() > 0);
 			msg += "'" + content + "'";
 		}
 		throw json_exception{msg};
 	}
 }
 
+static inline void parse_expect(std::istream& stream, char expected) {
+	char content;
+	stream >> content;
+	if (content != expected) {
+		std::string msg = "Expected '" + std::string(1, expected) + "', got ";
+		if (!stream) {
+			msg += "EOF";
+		} else {
+			msg += "byte " + std::to_string((int) content);
+		}
+		throw json_exception{msg};
+	}
+}
+
 static std::string parse_str(std::istream& stream) {
-	parse_expect(stream, "\"");
+	parse_expect(stream, '"');
 
 	std::string content;
 	do {
@@ -325,7 +338,7 @@ static std::string parse_str(std::istream& stream) {
 		if (!stream) {
 			throw json_exception{"Expected '\"', got EOF"};
 		}
-	} while (content.back() != '"' || (content.length() > 1 && content[content.length()-2] == '\\'));
+	} while (content.back() != '"' || (content.size() > 1 && content[content.size()-2] == '\\'));
 	content.pop_back();
 
 	return content;
@@ -388,11 +401,7 @@ static void parse_dict(std::istream& stream, json& container) {
 
 		if (symbol != '}') {
 			std::string key = parse_str(stream);
-
-			stream >> symbol;
-			if (symbol != ':') {
-				throw json_exception{"Expected ':', got byte " + std::to_string((int) symbol)};
-			}
+			parse_expect(stream, ':');
 
 			json value;
 			stream >> value;
@@ -420,11 +429,11 @@ std::istream& operator>>(std::istream& lhs, json& rhs) {
 	if (symbol == '[') {
 		rhs.set_list();
 		parse_list(lhs, rhs);
-		parse_expect(lhs, "]");	// TODO: Should skip leading whitespaces
+		parse_expect(lhs, ']');
 	} else if (symbol == '{') {
 		rhs.set_dictionary();
 		parse_dict(lhs, rhs);
-		parse_expect(lhs, "}");
+		parse_expect(lhs, '}');
 	} else {
 		lhs.putback(symbol);
 		parse_primitive(lhs, rhs);

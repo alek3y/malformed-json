@@ -72,7 +72,7 @@ void tests(void) {
 	TEST_PARSER_THROW("[[", "Expected JSON, got EOF");
 	TEST_PARSER_THROW("[\"something, 3.14]", "Expected '\"', got EOF");
 	TEST_PARSER_THROW("[tru]", "Expected 'true', got 'tru]'");
-	TEST_PARSER_THROW("[truee]", "Expected ']', got 'e'");
+	TEST_PARSER_THROW("[truee]", "Expected ']', got byte 101");
 	TEST_PARSER_THROW("[null, \"\", [1, 2]", "Expected ']', got EOF");
 	TEST_PARSER_THROW("[,]", "Expected primitive, got byte 44");
 	TEST_PARSER("[]");
@@ -83,13 +83,13 @@ void tests(void) {
 	TEST_PARSER("[true, false, \"\", [1, 2]]");
 
 	TEST_PARSER_THROW("{", "Expected '\"', got EOF");
-	TEST_PARSER_THROW("{{", "Expected '\"', got '{'");
-	TEST_PARSER_THROW("{{}}", "Expected '\"', got '{'");
-	TEST_PARSER_THROW("{,}", "Expected '\"', got ','");
+	TEST_PARSER_THROW("{{", "Expected '\"', got byte 123");
+	TEST_PARSER_THROW("{{}}", "Expected '\"', got byte 123");
+	TEST_PARSER_THROW("{,}", "Expected '\"', got byte 44");
 	TEST_PARSER_THROW("{\"something: 3.14}", "Expected '\"', got EOF");
 	TEST_PARSER_THROW("{\"key\", \"value\"}", "Expected ':', got byte 44");
 	TEST_PARSER_THROW("{\"key\": [1,}", "Expected primitive, got byte 125");
-	TEST_PARSER_THROW("{\" \\\" \": [{\"a\": 1]}", "Expected '}', got ']'");
+	TEST_PARSER_THROW("{\" \\\" \": [{\"a\": 1]}", "Expected '}', got byte 93");
 	TEST_PARSER("{}");
 	TEST_PARSER("{\"something\": \"\\\"reason\\\"\"}");
 	TEST_PARSER("{\"pi\": 3.14}");

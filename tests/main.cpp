@@ -1,4 +1,4 @@
-#include "json.hpp"
+#include "../src/json.cpp"	// Disgusting workaround for incomplete iterators on json.hpp
 #include <iostream>
 #include <string>
 #include <sstream>

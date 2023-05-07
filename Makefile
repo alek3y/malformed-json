@@ -3,7 +3,7 @@ CXXFLAGS = -g -std=c++14 -pedantic -Wall -Wextra -Wshadow -Wfatal-errors
 CXXFLAGS += -Wno-unused-parameter
 CXXFLAGS += -I include
 
-SRC = src/json.cpp tests/main.cpp
+SRC = src/json.cpp
 OBJ = $(SRC:%.cpp=%.o)
 
 TEST = tests/main
@@ -14,7 +14,7 @@ sanitized: CXXFLAGS += -fsanitize=address -fno-omit-frame-pointer
 all sanitized: $(OBJ) $(TEST)
 
 # Here $^ means all the prerequisites and $@ the target
-$(TEST): $(OBJ)
+$(TEST): $(TEST).cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 # Here $< means the first prerequisite

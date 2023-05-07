@@ -108,14 +108,18 @@ json::~json() {
 }
 
 json& json::operator=(const json& rhs) {
-	*pimpl = *rhs.pimpl;
+	if (this != &rhs) {
+		*pimpl = *rhs.pimpl;
+	}
 	return *this;
 }
 
 json& json::operator=(json&& rhs) {
-	delete pimpl;
-	pimpl = rhs.pimpl;
-	rhs.pimpl = nullptr;
+	if (this != &rhs) {
+		delete pimpl;
+		pimpl = rhs.pimpl;
+		rhs.pimpl = nullptr;
+	}
 	return *this;
 }
 
@@ -542,7 +546,7 @@ static inline void parse_expect(std::istream& stream, std::string expected) {
 }
 
 static inline void parse_expect(std::istream& stream, char expected) {
-	char content;
+	char content = 0;
 	stream >> content;
 	if (content != expected) {
 		std::string msg = "Expected '" + std::string(1, expected) + "', got ";
@@ -595,6 +599,7 @@ static void parse_primitive(std::istream& stream, json& container) {
 	}
 }
 
+// TODO: Refactor this?
 static void parse_list(std::istream& stream, json& container) {
 	bool end_of_list = false;
 	while (!end_of_list) {

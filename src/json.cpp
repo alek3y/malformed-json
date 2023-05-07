@@ -169,16 +169,6 @@ json& json::operator[](const std::string& rhs) {
 	return node->value.second;
 }
 
-//list_iterator begin_list();
-//const_list_iterator begin_list() const;
-//list_iterator end_list();
-//const_list_iterator end_list() const;
-
-//dictionary_iterator begin_dictionary();
-//const_dictionary_iterator begin_dictionary() const;
-//dictionary_iterator end_dictionary();
-//const_dictionary_iterator end_dictionary() const;
-
 double& json::get_number() {
 	if (!is_number()) {
 		throw json_exception{"Wrong json& type for get_number"};
@@ -275,6 +265,242 @@ void json::insert(const std::pair<std::string, json>& rhs) {
 	}
 
 	pimpl->push_back(rhs);
+}
+
+struct json::list_iterator {
+	using iterator_category = std::forward_iterator_tag;
+	using value_type = json;
+	using pointer = value_type*;
+	using reference = value_type&;
+
+	list_iterator(impl::list* node) : ptr(node) {}
+
+	reference operator*() const {
+		return ptr->value.second;
+	}
+
+	pointer operator->() const {
+		return &ptr->value.second;
+	}
+
+	list_iterator& operator++() {
+		ptr = ptr->next;
+		return *this;
+	}
+
+	list_iterator operator++(int) {
+		list_iterator it(ptr);
+		++(*this);
+		return it;
+	}
+
+	bool operator==(const list_iterator& rhs) const {
+		return ptr == rhs.ptr;
+	}
+
+	bool operator!=(const list_iterator& rhs) const {
+		return ptr != rhs.ptr;
+	}
+
+	operator bool() const {
+		return ptr != nullptr;
+	}
+
+	private:
+		impl::list* ptr;
+};
+
+json::list_iterator json::begin_list() {
+	if (!is_list()) {
+		throw json_exception{"Wrong json& type for begin_list"};
+	}
+
+	return list_iterator(pimpl->head);
+}
+
+json::list_iterator json::end_list() {
+	if (!is_list()) {
+		throw json_exception{"Wrong json& type for end_list"};
+	}
+
+	return list_iterator(nullptr);
+}
+
+struct json::const_list_iterator {
+	using iterator_category = std::forward_iterator_tag;
+	using value_type = const json;
+	using pointer = value_type*;
+	using reference = value_type&;
+
+	const_list_iterator(impl::list* node) : ptr(node) {}
+
+	reference operator*() const {
+		return ptr->value.second;
+	}
+
+	pointer operator->() const {
+		return &ptr->value.second;
+	}
+
+	const_list_iterator& operator++() {
+		ptr = ptr->next;
+		return *this;
+	}
+
+	const_list_iterator operator++(int) {
+		const_list_iterator it(ptr);
+		++(*this);
+		return it;
+	}
+
+	bool operator==(const const_list_iterator& rhs) const {
+		return ptr == rhs.ptr;
+	}
+
+	bool operator!=(const const_list_iterator& rhs) const {
+		return ptr != rhs.ptr;
+	}
+
+	operator bool() const {
+		return ptr != nullptr;
+	}
+
+	private:
+		impl::list* ptr;
+};
+
+json::const_list_iterator json::begin_list() const {
+	if (!is_list()) {
+		throw json_exception{"Wrong const json& type for begin_list"};
+	}
+
+	return const_list_iterator(pimpl->head);
+}
+
+json::const_list_iterator json::end_list() const {
+	if (!is_list()) {
+		throw json_exception{"Wrong const json& type for end_list"};
+	}
+
+	return const_list_iterator(nullptr);
+}
+
+struct json::dictionary_iterator {
+	using iterator_category = std::forward_iterator_tag;
+	using value_type = std::pair<std::string, json>;
+	using pointer = value_type*;
+	using reference = value_type&;
+
+	dictionary_iterator(impl::list* node) : ptr(node) {}
+
+	reference operator*() const {
+		return ptr->value;
+	}
+
+	pointer operator->() const {
+		return &ptr->value;
+	}
+
+	dictionary_iterator& operator++() {
+		ptr = ptr->next;
+		return *this;
+	}
+
+	dictionary_iterator operator++(int) {
+		dictionary_iterator it(ptr);
+		++(*this);
+		return it;
+	}
+
+	bool operator==(const dictionary_iterator& rhs) const {
+		return ptr == rhs.ptr;
+	}
+
+	bool operator!=(const dictionary_iterator& rhs) const {
+		return ptr != rhs.ptr;
+	}
+
+	operator bool() const {
+		return ptr != nullptr;
+	}
+
+	private:
+		impl::list* ptr;
+};
+
+json::dictionary_iterator json::begin_dictionary() {
+	if (!is_dictionary()) {
+		throw json_exception{"Wrong json& type for begin_dictionary"};
+	}
+
+	return dictionary_iterator(pimpl->head);
+}
+
+json::dictionary_iterator json::end_dictionary() {
+	if (!is_dictionary()) {
+		throw json_exception{"Wrong json& type for end_dictionary"};
+	}
+
+	return dictionary_iterator(nullptr);
+}
+
+struct json::const_dictionary_iterator {
+	using iterator_category = std::forward_iterator_tag;
+	using value_type = const std::pair<std::string, json>;
+	using pointer = value_type*;
+	using reference = value_type&;
+
+	const_dictionary_iterator(impl::list* node) : ptr(node) {}
+
+	reference operator*() const {
+		return ptr->value;
+	}
+
+	pointer operator->() const {
+		return &ptr->value;
+	}
+
+	const_dictionary_iterator& operator++() {
+		ptr = ptr->next;
+		return *this;
+	}
+
+	const_dictionary_iterator operator++(int) {
+		const_dictionary_iterator it(ptr);
+		++(*this);
+		return it;
+	}
+
+	bool operator==(const const_dictionary_iterator& rhs) const {
+		return ptr == rhs.ptr;
+	}
+
+	bool operator!=(const const_dictionary_iterator& rhs) const {
+		return ptr != rhs.ptr;
+	}
+
+	operator bool() const {
+		return ptr != nullptr;
+	}
+
+	private:
+		impl::list* ptr;
+};
+
+json::const_dictionary_iterator json::begin_dictionary() const {
+	if (!is_dictionary()) {
+		throw json_exception{"Wrong const json& type for begin_dictionary"};
+	}
+
+	return const_dictionary_iterator(pimpl->head);
+}
+
+json::const_dictionary_iterator json::end_dictionary() const {
+	if (!is_dictionary()) {
+		throw json_exception{"Wrong const json& type for end_dictionary"};
+	}
+
+	return const_dictionary_iterator(nullptr);
 }
 
 // Context-free grammar for the simplified JSON file type (see include/README.md):

@@ -192,6 +192,7 @@ struct json::impl {
 		list* ptr = rhs.head;
 		while (ptr != nullptr) {
 			push_back(ptr->value);
+			ptr = ptr->next;
 		}
 		return *this;
 	}
@@ -237,7 +238,7 @@ json::json(const json& rhs) : json() {
 	*this = rhs;
 }
 
-json::json(json&& rhs) {
+json::json(json&& rhs) : json() {
 	*this = std::move(rhs);
 }
 
@@ -251,6 +252,7 @@ json& json::operator=(const json& rhs) {
 }
 
 json& json::operator=(json&& rhs) {
+	delete pimpl;
 	pimpl = rhs.pimpl;
 	rhs.pimpl = nullptr;
 	return *this;

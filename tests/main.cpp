@@ -110,6 +110,103 @@ void tests(void) {
 		}
 		assert(j1.is_null());
 	});
+
+	TEST("", [](auto s) {
+		string msg;
+		try {
+			json j;
+			j["test"];
+		} catch (json_exception e) {
+			msg = e.msg;
+		}
+		assert(msg == "Wrong json& type for operator[]");
+	});
+
+	TEST("", [](auto s) {
+		string msg;
+		try {
+			json j1;
+			{
+				const json& j2 = j1;
+				j2["test"];
+			}
+		} catch (json_exception e) {
+			msg = e.msg;
+		}
+		assert(msg == "Wrong const json& type for operator[]");
+	});
+
+	TEST("", [](auto s) {
+		string msg;
+		try {
+			json j;
+			j.insert(pair<string, json>());
+		} catch (json_exception e) {
+			msg = e.msg;
+		}
+		assert(msg == "Wrong json& type for insert");
+	});
+
+	TEST("", [](auto s) {
+		json j;
+		j.set_dictionary();
+		j.insert(pair<string, json>());
+		assert(j.is_dictionary());
+	});
+
+	TEST("", [](auto s) {
+		string msg;
+		try {
+			json j1;
+			j1.set_dictionary();
+			{
+				const json& j2 = j1;
+				j2["missing"];
+			}
+		} catch (json_exception e) {
+			msg = e.msg;
+		}
+		assert(msg == "Unable to create key 'missing' for const json&");
+	});
+
+	TEST("", [](auto s) {
+		json j1;
+		{
+			json j2;
+			j2.set_dictionary();
+			j2["null"];
+			j2["str"].set_string("hello");
+			j1 = move(j2);
+		}
+		const json& j2 = j1;
+		assert(j1["null"].is_null() && j2["str"].is_string() && j1["str"].get_string() == "hello");
+	});
+
+	TEST("", [](auto s) {
+		json j;
+		j.set_string("hi");
+		assert(j.is_string() && j.get_string() == "hi");
+
+		j.set_bool(false);
+		assert(j.is_bool() && j.get_bool() == false);
+
+		j.set_number(3.14);
+		assert(j.is_number() && j.get_number() == 3.14);
+
+		j.set_list();
+		json e;
+		e.set_string("world");
+		j.push_back(e);
+		j.push_front(j);
+		assert(j.is_list());
+
+		j.set_dictionary();
+		j.insert(make_pair("hello", e));
+		assert(j.is_dictionary() && j["hello"].get_string() == "world");
+
+		j.set_null();
+		assert(j.is_null());
+	});
 }
 
 int main(int argc, char** argv) {

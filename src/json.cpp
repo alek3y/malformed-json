@@ -160,7 +160,7 @@ struct json::impl {
 	list* head;
 	list* tail;
 
-	impl() : type(JSON_NULL), head(nullptr), tail(nullptr) {}
+	impl() : type(JSON_NULL), s(), head(nullptr), tail(nullptr) {}
 
 	impl(const impl& rhs) {
 		*this = rhs;
@@ -170,17 +170,15 @@ struct json::impl {
 		clear();
 	}
 
-	void push_back(std::pair<std::string, json> value) {
-		list* node = new list;
-		node->value = value;
-		node->next = nullptr;
-
-		if (tail == nullptr) {
-			head = tail = node;
-		} else {
-			tail->next = node;
-			tail = node;
+	void clear() {
+		type = JSON_NULL;
+		s.clear();
+		while (head != nullptr) {
+			list* previous = head;
+			head = head->next;
+			delete previous;
 		}
+		tail = nullptr;
 	}
 
 	impl& operator=(const impl& rhs) {
@@ -198,15 +196,36 @@ struct json::impl {
 		return *this;
 	}
 
-	void clear() {
-		type = JSON_NULL;
-		s.clear();
-		while (head != nullptr) {
-			list* previous = head;
-			head = head->next;
-			delete previous;
+	void push_back(const std::pair<std::string, json>& value) {
+		list* node = new list;
+		node->value = value;
+		node->next = nullptr;
+
+		if (tail == nullptr) {
+			head = node;
+		} else {
+			tail->next = node;
 		}
-		tail = nullptr;
+		tail = node;
+	}
+
+	void push_front(const std::pair<std::string, json>& value) {
+		list* node = new list;
+		node->value = value;
+		node->next = head;
+
+		if (head == nullptr) {
+			tail = node;
+		}
+		head = node;
+	}
+
+	list* get(const std::string& key) {
+		list* ptr = head;
+		while (ptr != nullptr && ptr->value.first != key) {
+			ptr = ptr->next;
+		}
+		return ptr;
 	}
 };
 
@@ -259,4 +278,138 @@ bool json::is_bool() const {
 
 bool json::is_null() const {
 	return pimpl->type == impl::json_type::JSON_NULL;
+}
+
+const json& json::operator[](const std::string& rhs) const {
+	if (!is_dictionary()) {
+		throw json_exception{"Wrong const json& type for operator[]"};
+	}
+
+	impl::list* node = pimpl->get(rhs);
+	if (node == nullptr) {
+		throw json_exception{"Unable to create key '" + rhs + "' for const json&"};
+	}
+	return node->value.second;
+}
+
+json& json::operator[](const std::string& rhs) {
+	if (!is_dictionary()) {
+		throw json_exception{"Wrong json& type for operator[]"};
+	}
+
+	impl::list* node = pimpl->get(rhs);
+	if (node == nullptr) {
+		std::pair<std::string, json> pair(rhs, json());
+		insert(pair);
+		return pimpl->tail->value.second;
+	}
+	return node->value.second;
+}
+
+//list_iterator begin_list();
+//const_list_iterator begin_list() const;
+//list_iterator end_list();
+//const_list_iterator end_list() const;
+
+//dictionary_iterator begin_dictionary();
+//const_dictionary_iterator begin_dictionary() const;
+//dictionary_iterator end_dictionary();
+//const_dictionary_iterator end_dictionary() const;
+
+double& json::get_number() {
+	if (!is_number()) {
+		throw json_exception{"Wrong json& type for get_number"};
+	}
+	return pimpl->n;
+}
+
+const double& json::get_number() const {
+	if (!is_number()) {
+		throw json_exception{"Wrong const json& type for get_number"};
+	}
+	return pimpl->n;
+}
+
+bool& json::get_bool() {
+	if (!is_bool()) {
+		throw json_exception{"Wrong json& type for get_bool"};
+	}
+	return pimpl->b;
+}
+
+const bool& json::get_bool() const {
+	if (!is_bool()) {
+		throw json_exception{"Wrong const json& type for get_bool"};
+	}
+	return pimpl->b;
+}
+
+std::string& json::get_string() {
+	if (!is_string()) {
+		throw json_exception{"Wrong json& type for get_string"};
+	}
+	return pimpl->s;
+}
+
+const std::string& json::get_string() const {
+	if (!is_string()) {
+		throw json_exception{"Wrong const json& type for get_string"};
+	}
+	return pimpl->s;
+}
+
+void json::set_string(const std::string& string) {
+	pimpl->clear();
+	pimpl->s = string;
+	pimpl->type = impl::json_type::JSON_STR;
+}
+
+void json::set_bool(bool boolean) {
+	pimpl->clear();
+	pimpl->b = boolean;
+	pimpl->type = impl::json_type::JSON_BOOL;
+}
+
+void json::set_number(double number) {
+	pimpl->clear();
+	pimpl->n = number;
+	pimpl->type = impl::json_type::JSON_NUMBER;
+}
+
+void json::set_null() {
+	pimpl->clear();
+}
+
+void json::set_list() {
+	pimpl->clear();
+	pimpl->type = impl::json_type::JSON_LIST;
+}
+
+void json::set_dictionary() {
+	pimpl->clear();
+	pimpl->type = impl::json_type::JSON_DICT;
+}
+
+void json::push_front(const json& rhs) {
+	if (!is_list()) {
+		throw json_exception{"Wrong json& type for push_front"};
+	}
+
+	pimpl->push_front(std::pair<std::string, json>(std::string(), rhs));
+}
+
+void json::push_back(const json& rhs) {
+	if (!is_list()) {
+		throw json_exception{"Wrong json& type for push_back"};
+	}
+
+	pimpl->push_back(std::pair<std::string, json>(std::string(), rhs));
+}
+
+void json::insert(const std::pair<std::string, json>& rhs) {
+	if (!is_dictionary()) {
+		throw json_exception{"Wrong json& type for insert"};
+	}
+
+	pimpl->push_back(rhs);
 }

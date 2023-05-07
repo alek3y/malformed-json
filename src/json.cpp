@@ -682,3 +682,36 @@ std::istream& operator>>(std::istream& lhs, json& rhs) {
 	}
 	return lhs;
 }
+
+std::ostream& operator<<(std::ostream& lhs, const json& rhs) {
+	if (rhs.is_list()) {
+		lhs << "[";
+		auto it = rhs.begin_list();
+		while (it != rhs.end_list()) {
+			lhs << *it;
+			if (++it != rhs.end_list()) {
+				lhs << ",";
+			}
+		}
+		lhs << "]";
+	} else if (rhs.is_dictionary()) {
+		lhs << "{";
+		auto it = rhs.begin_dictionary();
+		while (it != rhs.end_dictionary()) {
+			lhs << "\"" << it->first << "\":" << it->second;
+			if (++it != rhs.end_dictionary()) {
+				lhs << ",";
+			}
+		}
+		lhs << "}";
+	} else if (rhs.is_string()) {
+		lhs << "\"" << rhs.get_string() << "\"";
+	} else if (rhs.is_number()) {
+		lhs << rhs.get_number();
+	} else if (rhs.is_bool()) {
+		lhs << (rhs.get_bool() ? "true" : "false");
+	} else if (rhs.is_null()) {
+		lhs << "null";
+	}
+	return lhs;
+}

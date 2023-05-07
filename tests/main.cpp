@@ -4,14 +4,25 @@
 #include <sstream>
 #include <cassert>
 #include <fstream>
+#include <algorithm>
 using namespace std;
+
+#define ERASE_SPACES(str) \
+	do { \
+		(str).erase(remove_if( \
+			(str).begin(), (str).end(), \
+			[](char c) { \
+				return isspace(c); \
+			} \
+		), (str).end()); \
+	} while (false)
 
 #define TEST(contents, ...) \
 	do { \
 		stringstream stream(string((contents))); \
 		((void (*)(stringstream&)) (__VA_ARGS__))(stream); \
 		cout << "TEST:" << __LINE__ << ": Passed" << endl; \
-	} while (false);
+	} while (false)
 
 #define TEST_PARSER(contents) TEST((contents), [](auto s) {json j; s >> j;})
 
@@ -28,7 +39,22 @@ using namespace std;
 			} \
 			assert(msg == (expected)); \
 		}); \
-	} while (false);
+	} while (false)
+
+#define TEST_OSTREAM(contents) \
+	do { \
+		TEST((contents), [](auto is) { \
+			string istr = is.str(); \
+			ERASE_SPACES(istr); \
+			json j; \
+			is >> j; \
+			stringstream os; \
+			os << j; \
+			string ostr = os.str(); \
+			ERASE_SPACES(ostr); \
+			assert(istr == ostr); \
+		}); \
+	} while (false)
 
 void tests(void) {
 	TEST_PARSER_THROW("", "Expected JSON, got EOF");
@@ -40,7 +66,7 @@ void tests(void) {
 
 	TEST_PARSER_THROW(".13", "Expected primitive, got byte 46");
 	TEST_PARSER("3.14");
-	TEST_PARSER("0.5e+2");
+	TEST_PARSER("-0.5e+2");
 	TEST_PARSER("16.1e-1");
 	TEST_PARSER("-1.61");
 	TEST_PARSER("0.0");
@@ -313,19 +339,32 @@ void tests(void) {
 		j1 = move(j1);
 		assert(j1.is_number() && j1.get_number() == 1.0);
 	});
+
+	TEST_OSTREAM("null");
+	TEST_OSTREAM("false");
+	TEST_OSTREAM("\"hello\"");
+	TEST_OSTREAM("\"\\\"\"");
+	TEST_OSTREAM("\"hello: \\\"world\\\"\"");
+	TEST_OSTREAM("-0.0314");
+	TEST_OSTREAM("[]");
+	TEST_OSTREAM("[1, 2]");
+	TEST_OSTREAM("[1, {\"hello\": \"world\"}]");
+	TEST_OSTREAM("{}");
+	TEST_OSTREAM("{\"\": null}");
+	TEST_OSTREAM("{\"a\": [1, 2, 3]}");
+	TEST_OSTREAM("{\"a\": 1.5, \"b\": -2, \"c\": [true, false]}");
+	TEST_OSTREAM("{\"z\": 3.14, \"m\": [4, 7, {\"a\": [1, 2]}, -2], \"a\": \"some \\\"thing\\\"\"}");
+	TEST_OSTREAM(" [ \" hello \" ,\n\n { \"a\":false ,\"b\" : [ 1,2, 3, 4],\t\n\t\" \\\"\" :null }, 3.14 ,-2]");
 }
 
 int main(int argc, char** argv) {
 	tests();
 
-	// TODO:
-	// Are huge datasets, like:
+	// For huge datasets to try, see:
 	// - https://github.com/jdorfman/awesome-json-datasets#historical-events (English; only with sanitizers)
 	// - https://huggingface.co/datasets/enryu43/twitter100m_users
 	// - https://huggingface.co/datasets/enryu43/twitter100m_tweets
 	// - and others from https://www.reddit.com/r/datasets/ and https://www.reddit.com/r/opendata/
-	// supposed to crash the parser of stack overflow (see valgrind)?
-	// How big should the JSON file be before the parser crashes?
 	for (int i = 1; i < argc; i++) {
 		ifstream stream(argv[i]);
 

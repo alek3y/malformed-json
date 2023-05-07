@@ -62,6 +62,7 @@ void tests(void) {
 	TEST_PARSER_THROW("\"something\\\"", "Expected '\"', got EOF");
 	TEST_PARSER_THROW("\"something\\\\\"", "Expected '\"', got EOF");	// NOTE: Standard wouldn't crash
 	TEST_PARSER("\"\"");
+	TEST_PARSER(" \"hi\"");
 	TEST_PARSER("\"\\\"\"");
 	TEST_PARSER("\"some \\\\\" thing\"");	// NOTE: Standard would crash
 	TEST_PARSER("\"hello\nworld\"");
@@ -76,8 +77,8 @@ void tests(void) {
 	TEST_PARSER_THROW("[,]", "Expected primitive, got byte 44");
 	TEST_PARSER("[]");
 	TEST_PARSER("[[[], [[[[], null], [[\"something\"]], [1]]], [false]], []]");
-	TEST_PARSER("[3.14]");
-	TEST_PARSER("[3.14,]");
+	TEST_PARSER("[3.14 ]");
+	TEST_PARSER("[3.14, ]");
 	TEST_PARSER("[\"something\", 3.14, -2, {\"\": -1}]");
 	TEST_PARSER("[true, false, \"\", [1, 2]]");
 

@@ -8,10 +8,10 @@ using namespace std;
 
 void parse(istream&);
 
-#define TEST(contents, lambda) \
+#define TEST(contents, ...) \
 	do { \
 		stringstream stream(string((contents))); \
-		((void (*)(stringstream&)) (lambda))(stream); \
+		((void (*)(stringstream&)) (__VA_ARGS__))(stream); \
 		cout << "TEST:" << __LINE__ << ": Passed" << endl; \
 	} while (false);
 

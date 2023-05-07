@@ -35,21 +35,21 @@ void tests(void) {
 	TEST_PARSER_THROW("A", "Expected primitive, got byte 65");
 	TEST_PARSER_THROW("nul", "Expected 'null', got 'nul'");
 	TEST_PARSER_THROW("nulu", "Expected 'null', got 'nulu'");
+	TEST_PARSER_THROW("nullptr", "Expected EOF, got byte 112");
 	TEST_PARSER("null");
 
 	TEST_PARSER_THROW(".13", "Expected primitive, got byte 46");
 	TEST_PARSER("3.14");
+	TEST_PARSER("0.5e+2");
+	TEST_PARSER("16.1e-1");
 	TEST_PARSER("-1.61");
 	TEST_PARSER("0.0");
 
 	TEST_PARSER_THROW("f", "Expected 'false', got 'f'");
 	TEST_PARSER_THROW("fals", "Expected 'false', got 'fals'");
 	TEST_PARSER_THROW("flase", "Expected 'false', got 'flase'");
+	TEST_PARSER_THROW("falseeeee", "Expected EOF, got byte 101");
 	TEST_PARSER("false");
-
-	// TODO: Which one?
-	//TEST_PARSER_THROW("falseeeee", "Expected EOF, got byte 101");
-	TEST_PARSER("falseeeee");
 
 	TEST_PARSER_THROW("t", "Expected 'true', got 't'");
 	TEST_PARSER_THROW("tre", "Expected 'true', got 'tre'");
@@ -95,12 +95,17 @@ void tests(void) {
 	TEST_PARSER("{\"pi\": 3.14}");
 	TEST_PARSER("{\"key\": [1, {\"a\": \"b\", \"c\": 3.14}, 2], }");
 
-	TEST("\"first\"[2]", [](auto s) {
+	TEST("[\"first\", [2]]", [](auto s) {
+		json jl;
+		s >> jl;
+		auto itl = jl.begin_list();
+
 		json j1;
-		s >> j1;
+		j1 = *(itl++);
 		{
 			json j2;
-			s >> j2;
+			j2 = *(itl++);
+			assert(itl == jl.end_list());
 
 			assert(j2.is_list());
 			auto it = j2.begin_list();
@@ -113,13 +118,18 @@ void tests(void) {
 		assert(j1.is_string() && j1.get_string() == "first");
 	});
 
-	TEST("false\"false\"", [](auto s) {
+	TEST("[false, \"false\"]", [](auto s) {
+		json jl;
+		s >> jl;
+		auto it = jl.begin_list();
+
 		json j1;
-		s >> j1;
+		j1 = *(it++);
 		assert(j1.is_bool() && j1.get_bool() == false);
 		{
 			json j2;
-			s >> j2;
+			j2 = *(it++);
+			assert(it == jl.end_list());
 			assert(j2.is_string() && j2.get_string() == "false");
 			j1 = move(j2);
 		}
@@ -152,6 +162,12 @@ void tests(void) {
 			msg = e.msg;
 		}
 		assert(msg == "Wrong json& type for operator[]");
+	});
+
+	TEST("141.4e-2", [](auto s) {
+		json j;
+		s >> j;
+		assert(j.is_number() && j.get_number() == 1.414);
 	});
 
 	TEST("{}", [](auto s) {

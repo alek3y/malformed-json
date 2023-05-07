@@ -599,6 +599,8 @@ static void parse_primitive(std::istream& stream, json& container) {
 	}
 }
 
+static void parse_json(std::istream&, json&);
+
 // TODO: Refactor this?
 static void parse_list(std::istream& stream, json& container) {
 	bool end_of_list = false;
@@ -609,7 +611,7 @@ static void parse_list(std::istream& stream, json& container) {
 
 		if (symbol != ']') {
 			json element;
-			stream >> element;
+			parse_json(stream, element);
 			container.push_back(element);
 
 			stream >> symbol;
@@ -635,7 +637,7 @@ static void parse_dict(std::istream& stream, json& container) {
 			parse_expect(stream, ':');
 
 			json value;
-			stream >> value;
+			parse_json(stream, value);
 			container.insert(std::pair<std::string, json>(key, value));
 
 			stream >> symbol;
@@ -649,26 +651,34 @@ static void parse_dict(std::istream& stream, json& container) {
 	}
 }
 
-// Corresponds to the <Json> non-terminal
-std::istream& operator>>(std::istream& lhs, json& rhs) {
+static void parse_json(std::istream& stream, json& container) {
 	char symbol = 0;
-	lhs >> symbol;
-	if (!lhs) {
+	stream >> symbol;
+	if (!stream) {
 		throw json_exception{"Expected JSON, got EOF"};
 	}
 
 	if (symbol == '[') {
-		rhs.set_list();
-		parse_list(lhs, rhs);
-		parse_expect(lhs, ']');
+		container.set_list();
+		parse_list(stream, container);
+		parse_expect(stream, ']');
 	} else if (symbol == '{') {
-		rhs.set_dictionary();
-		parse_dict(lhs, rhs);
-		parse_expect(lhs, '}');
+		container.set_dictionary();
+		parse_dict(stream, container);
+		parse_expect(stream, '}');
 	} else {
-		lhs.putback(symbol);
-		parse_primitive(lhs, rhs);
+		stream.putback(symbol);
+		parse_primitive(stream, container);
 	}
+}
 
+std::istream& operator>>(std::istream& lhs, json& rhs) {
+	parse_json(lhs, rhs);
+
+	char symbol = 0;
+	lhs >> symbol;
+	if (lhs) {
+		throw json_exception{"Expected EOF, got byte " + std::to_string((int) symbol)};
+	}
 	return lhs;
 }

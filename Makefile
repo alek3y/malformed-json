@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -g -std=c++14 -pedantic -Wall -Wextra -Wshadow -Wfatal-errors
+CXXFLAGS = -g -std=c++17 -pedantic -Wall -Wextra -Wshadow -Wfatal-errors
 CXXFLAGS += -Wno-unused-parameter
 CXXFLAGS += -I include
 

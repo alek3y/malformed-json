@@ -508,9 +508,9 @@ json::const_dictionary_iterator json::end_dictionary() const {
 }
 
 // Context-free grammar for the simplified JSON file type (see include/README.md):
-// <Json> → <Primitive> | [<List>] | {<Dict>}
-// <List> → ε | <Json> | <Json>,<List>
-// <Dict> → ε | <Pair> | <Pair>,<Dict>
+// <Json> → <Primitive> | [] | [<List>] | {} | {<Dict>}
+// <List> → <Json> | <Json>,<List>
+// <Dict> → <Pair> | <Pair>,<Dict>
 // <Primitive> → null | <Number> | <Bool> | "<Str>"
 //
 // <Pair> → ε | "<Str>":<Json>
@@ -601,54 +601,31 @@ static void parse_primitive(std::istream& stream, json& container) {
 
 static void parse_json(std::istream&, json&);
 
-// TODO: Refactor this?
 static void parse_list(std::istream& stream, json& container) {
-	bool end_of_list = false;
-	while (!end_of_list) {
-		char symbol = 0;
+	char symbol = 0;
+	do {
+		json element;
+		parse_json(stream, element);
+		container.push_back(element);
+
 		stream >> symbol;
-		stream.putback(symbol);
-
-		if (symbol != ']') {
-			json element;
-			parse_json(stream, element);
-			container.push_back(element);
-
-			stream >> symbol;
-			if (symbol != ',') {
-				stream.putback(symbol);
-				end_of_list = true;
-			}
-		} else {
-			end_of_list = true;
-		}
-	}
+	} while (stream && symbol == ',');
+	stream.putback(symbol);
 }
 
 static void parse_dict(std::istream& stream, json& container) {
-	bool end_of_dict = false;
-	while (!end_of_dict) {
-		char symbol = 0;
+	char symbol = 0;
+	do {
+		std::string key = parse_str(stream);
+		parse_expect(stream, ':');
+
+		json value;
+		parse_json(stream, value);
+		container.insert(std::pair<std::string, json>(key, value));
+
 		stream >> symbol;
-		stream.putback(symbol);
-
-		if (symbol != '}') {
-			std::string key = parse_str(stream);
-			parse_expect(stream, ':');
-
-			json value;
-			parse_json(stream, value);
-			container.insert(std::pair<std::string, json>(key, value));
-
-			stream >> symbol;
-			if (symbol != ',') {
-				stream.putback(symbol);
-				end_of_dict = true;
-			}
-		} else {
-			end_of_dict = true;
-		}
-	}
+	} while (stream && symbol == ',');
+	stream.putback(symbol);
 }
 
 static void parse_json(std::istream& stream, json& container) {
@@ -660,11 +637,21 @@ static void parse_json(std::istream& stream, json& container) {
 
 	if (symbol == '[') {
 		container.set_list();
-		parse_list(stream, container);
+
+		stream >> symbol;
+		stream.putback(symbol);
+		if (symbol != ']') {
+			parse_list(stream, container);
+		}
 		parse_expect(stream, ']');
 	} else if (symbol == '{') {
 		container.set_dictionary();
-		parse_dict(stream, container);
+
+		stream >> symbol;
+		stream.putback(symbol);
+		if (symbol != '}') {
+			parse_dict(stream, container);
+		}
 		parse_expect(stream, '}');
 	} else {
 		stream.putback(symbol);

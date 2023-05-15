@@ -96,15 +96,16 @@ void tests(void) {
 
 	TEST_PARSER_THROW("[", "Expected JSON, got EOF");
 	TEST_PARSER_THROW("[[", "Expected JSON, got EOF");
+	TEST_PARSER_THROW("[[]", "Expected ']', got EOF");
 	TEST_PARSER_THROW("[\"something, 3.14]", "Expected '\"', got EOF");
 	TEST_PARSER_THROW("[tru]", "Expected 'true', got 'tru]'");
 	TEST_PARSER_THROW("[truee]", "Expected ']', got byte 101");
 	TEST_PARSER_THROW("[null, \"\", [1, 2]", "Expected ']', got EOF");
+	TEST_PARSER_THROW("[\"\", ]", "Expected primitive, got byte 93");
 	TEST_PARSER_THROW("[,]", "Expected primitive, got byte 44");
 	TEST_PARSER("[]");
 	TEST_PARSER("[[[], [[[[], null], [[\"something\"]], [1]]], [false]], []]");
 	TEST_PARSER("[3.14 ]");
-	TEST_PARSER("[3.14, ]");
 	TEST_PARSER("[\"something\", 3.14, -2, {\"\": -1}]");
 	TEST_PARSER("[true, false, \"\", [1, 2]]");
 
@@ -112,6 +113,7 @@ void tests(void) {
 	TEST_PARSER_THROW("{{", "Expected '\"', got byte 123");
 	TEST_PARSER_THROW("{{}}", "Expected '\"', got byte 123");
 	TEST_PARSER_THROW("{,}", "Expected '\"', got byte 44");
+	TEST_PARSER_THROW("{\"\": null, }", "Expected '\"', got byte 125");
 	TEST_PARSER_THROW("{\"something: 3.14}", "Expected '\"', got EOF");
 	TEST_PARSER_THROW("{\"key\", \"value\"}", "Expected ':', got byte 44");
 	TEST_PARSER_THROW("{\"key\": [1,}", "Expected primitive, got byte 125");
@@ -119,7 +121,7 @@ void tests(void) {
 	TEST_PARSER("{}");
 	TEST_PARSER("{\"something\": \"\\\"reason\\\"\"}");
 	TEST_PARSER("{\"pi\": 3.14}");
-	TEST_PARSER("{\"key\": [1, {\"a\": \"b\", \"c\": 3.14}, 2], }");
+	TEST_PARSER("{\"key\": [1, {\"a\": \"b\", \"c\": 3.14}, 2]}");
 
 	TEST("[\"first\", [2]]", [](auto s) {
 		json jl;
@@ -221,7 +223,7 @@ void tests(void) {
 		assert(msg == "Unable to create key 'test' for const json&");
 	});
 
-	TEST("[1,]", [](auto s) {
+	TEST("[1 ]", [](auto s) {
 		json j1;
 		s >> j1;
 		assert(j1.is_list());
@@ -275,6 +277,15 @@ void tests(void) {
 			msg = e.msg;
 		}
 		assert(msg == "Unable to create key 'missing' for const json&");
+	});
+
+	TEST("1", [](auto s) {
+		json j1;
+		s >> j1;
+		{
+			json j2(move(j1));
+			assert(j2.is_number() && j2.get_number() == 1.0);
+		}
 	});
 
 	TEST("", [](auto s) {
